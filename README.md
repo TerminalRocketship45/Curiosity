@@ -16,7 +16,7 @@ the math; every symbol is defined in plain language before it is used.
 
 ## Table of contents
 
-- [The idea, in plain language](#the-idea-in-plain-language)
+- [Methodology](#methodology)
 - [The temporal loss, and why it is needed](#the-temporal-loss-and-why-it-is-needed)
 - [What is in this repository](#what-is-in-this-repository)
 - [Install](#install)
