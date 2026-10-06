@@ -28,7 +28,7 @@ the math; every symbol is defined in plain language before it is used.
 - [Citing](#citing)
 - [License](#license)
 
-## The idea, in plain language
+## Methodology
 
 A reinforcement learning agent gets *extrinsic* reward from the task (reach
 the goal, collect the key). In a game where that reward is rare or absent for
