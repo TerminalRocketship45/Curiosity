@@ -1,0 +1,73 @@
+# IsoCover final recipe: Atari (Montezuma's Revenge / Venture, ||z||^2 arm).
+#
+# Every value below is copied verbatim from the config.json of the real final
+# training runs in the original research repository: toys/large_envs/runs/
+# block_montezuma/mz1_dyncv_s0/config.json and toys/large_envs/runs/
+# block_venture/bc_dyncv_s0/config.json. The two games used IDENTICAL
+# hyperparameters (only atari_task and the run's own seed/checkpoint path
+# differ), so one file covers both; set atari_task to pick the game.
+#
+# Cluster-specific fields present in the original config.json (host, slurm
+# job id, cpu count, device) are intentionally omitted here.
+
+env: atari
+atari_task: montezuma          # or: venture
+screen: 84
+frame_shape: [84, 84, 1]
+n_actions: 18                  # ALE's full discrete action set
+action_repeat: 4
+sticky_action_prob: 0.25
+max_steps_per_episode: 4500
+
+arm: zsq                       # this project's internal name for this arm was "caseA"
+latent_dim: 1024
+seed: 0                        # sweep seeds 0..9 across runs; results report the distribution
+
+total_steps: 40_000_000        # montezuma; venture's real run used 30_000_000
+
+# --- PPO ---
+num_envs: 64
+num_steps: 128
+epochs: 4
+num_minibatches: 4
+lr: 1.0e-4
+gamma: 0.99
+gamma_int: 0.99
+gamma_ext: 0.999
+gae_lambda: 0.95
+clip_coef: 0.2
+ent_coef: 0.001
+vf_coef: 0.5
+max_grad_norm: 0.5
+norm_adv: true
+hidden: 512
+lstm_layers: 1
+int_coef: 1.0
+ext_coef: 2.0
+int_episodic: false
+adv_norm_mode: combined
+critics: [ext, int]
+policy_input: embedding_only
+policy_embed_ema: 0
+
+# --- the map (SIGReg + temporal losses) ---
+sigreg: sw2
+sigreg_weight: 0.2
+enc_n_slices: 1024
+temporal: cosine_hinge_frames
+temporal_weight: 0.003
+cos_tau: 0.9
+cos_var_weight: 0.005
+dyn_weight: 0.1                 # the dynamics loss IS on for the 2D games (Atari's small discrete
+                                 # action set makes the one-hot dynamics predictor cheap and well-posed)
+dyn_hidden: 512
+enc_lr: 1.0e-3
+enc_ema_rate: 1.0
+enc_batch: 512
+enc_updates_per_ppo_update: 16
+
+# --- warm start ---
+# The encoder is pretrained on 4,000 steps of RANDOM-WALK data from this SAME
+# game before online training starts; see scripts/pretrain_walk.py.
+pretrain_steps: 4000
+pretrain_source: walk

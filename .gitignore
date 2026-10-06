@@ -1,0 +1,29 @@
+# runs / checkpoints
+runs/
+checkpoints/
+*.pt
+*.pth
+ckpt_*
+wandb/
+
+# data
+data/
+*.npz
+*.npy
+
+# python
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+*.egg-info/
+build/
+dist/
+.venv/
+venv/
+
+# os / editor
+.DS_Store
+*.swp
+.idea/
+.vscode/

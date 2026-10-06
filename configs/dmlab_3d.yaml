@@ -1,0 +1,83 @@
+# IsoCover final recipe: DMLab 3D maze (||z||^2 arm).
+#
+# Every value below is copied verbatim from the config.json of a real final
+# training run in the original research repository (this file adds no new
+# choices): toys/large_envs/runs/block_batchrenorm_control_maze999/
+# batchrenorm_control_maze999_s0/config.json (the "batch-renorm control" runs
+# are the best 3D config: batch renormalization OFF, i.e. this is the plain
+# final recipe with the ablation flag left at its inert default), cross-
+# checked against the sibling toys/large_envs/runs/block_bestcfg_combined_
+# maze999/bestcfg_combined_maze999_s5/config.json (same recipe, different
+# seed group). Both runs train on "maze 999": the
+# contributed/dmlab30/explore_goal_locations_large level reset with seed 999
+# every episode (see isocover/envs/dmlab.py's module docstring for why the
+# reset seed, not the level name, is what identifies a maze).
+#
+# Cluster-specific fields present in the original config.json (host, slurm
+# job id, cpu count, device) are intentionally omitted here.
+
+env: dmlab
+dmlab_level: contributed/dmlab30/explore_goal_locations_large
+maze_seed: 999                 # which fixed maze; 12345 is this project's other common default
+screen: 64
+frame_shape: [64, 64, 3]
+n_actions: 15                  # the PopArt discretization, see isocover/envs/dmlab.py
+action_repeat: 4
+truncate_at: 1349
+
+arm: zsq                       # this project's internal name for this arm was "caseA"
+latent_dim: 1024
+seed: 0                        # sweep seeds 0..9 across runs; results report the distribution
+
+total_steps: 1_000_000         # short budget: DMLab's task is dense enough to separate arms quickly
+
+# --- PPO ---
+num_envs: 64
+num_steps: 128                 # rollout length per environment per update
+epochs: 4
+num_minibatches: 4
+lr: 1.0e-4
+gamma: 0.99
+gamma_int: 0.99
+gamma_ext: 0.999
+gae_lambda: 0.95
+clip_coef: 0.2
+ent_coef: 0.001
+vf_coef: 0.5
+max_grad_norm: 0.5
+norm_adv: true
+hidden: 512                    # LSTM hidden size and policy head width
+lstm_layers: 1
+int_coef: 1.0
+ext_coef: 2.0
+int_episodic: false            # non-episodic intrinsic return (bootstraps through episode ends)
+adv_norm_mode: combined        # combine ext/int advantages first, normalize once (see isocover/ppo.py)
+critics: [ext, int]
+policy_input: embedding_only   # the policy reads the map's own embedding z, no separate pixel pathway
+policy_embed_ema: 0            # LIVE: gradient from the policy loss also reaches the encoder
+
+# --- the map (SIGReg + temporal losses) ---
+sigreg: sw2
+sigreg_weight: 0.2
+enc_n_slices: 1024
+temporal: cosine_hinge_frames
+temporal_weight: 0.003
+cos_tau: 0.9
+cos_var_weight: 0.005          # the combined cosine-variance term, on for DMLab too
+dyn_weight: 0.0                # the dynamics loss is OFF for the 3D maze (DMLab actions are
+                                # look/strafe/move, not a clean small one-hot skill set the way
+                                # the 2D games' actions are; see configs/atari_2d.yaml)
+enc_lr: 1.0e-3
+enc_ema_rate: 1.0               # no EMA smoothing: the reward always reads the live, training map
+enc_batch: 512
+enc_updates_per_ppo_update: 16
+
+# --- warm start ---
+# The encoder is pretrained on 4,000 steps of RANDOM-WALK data (never
+# privileged/uniform data) from this SAME maze before online training starts;
+# see scripts/pretrain_walk.py. The original checkpoint path recorded in the
+# source config.json was toys/large_envs/runs/block_maze999_eo_tempenc/
+# enc_cos_w0.003_walk_d1024.pt (omitted here; point --enc-init-ckpt at your
+# own pretrained checkpoint).
+pretrain_steps: 4000
+pretrain_source: walk
